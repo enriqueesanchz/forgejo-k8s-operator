@@ -84,6 +84,20 @@ def test_forgejo_storage_config_from_s3_info():
     assert cfg.use_ssl is True  # Default value
 
 
+@pytest.mark.parametrize("raw_endpoint", ["http://minio:9000", "https://minio:9000"])
+def test_forgejo_storage_config_endpoint_strips_scheme(raw_endpoint):
+    """Endpoint validator strips http:// and https:// prefixes."""
+    cfg = ForgejoStorageConfig(endpoint=raw_endpoint)
+    assert cfg.endpoint == "minio:9000"
+
+
+def test_forgejo_storage_config_from_s3_info_strips_scheme():
+    """from_s3_info strips http(s):// from the endpoint."""
+    s3_info = {"endpoint": "http://minio:9000", "access-key": "A", "secret-key": "S"}
+    cfg = ForgejoStorageConfig.from_s3_info(s3_info)
+    assert cfg.endpoint == "minio:9000"
+
+
 def _make_mock_charm(secret_id: str, content: dict | None) -> MagicMock:
     """Build a minimal mock charm whose model.get_secret returns a mock secret."""
     charm = MagicMock(spec=ops.CharmBase)

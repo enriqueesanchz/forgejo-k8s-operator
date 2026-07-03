@@ -8,7 +8,7 @@ import logging
 from typing import Literal
 
 import ops
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 logger = logging.getLogger(__name__)
 
@@ -123,6 +123,11 @@ class ForgejoStorageConfig(BaseModel):
     location: str = Field("", serialization_alias="FORGEJO__STORAGE__MINIO_LOCATION")
     base_path: str = Field("", serialization_alias="FORGEJO__STORAGE__MINIO_BASE_PATH")
     use_ssl: bool = Field(True, serialization_alias="FORGEJO__STORAGE__MINIO_USE_SSL")
+
+    @field_validator("endpoint", mode="before")
+    @classmethod
+    def _strip_scheme(cls, v: str) -> str:
+        return v.removeprefix("https://").removeprefix("http://")
 
     @field_serializer("use_ssl")
     def _ssl_to_str(self, value: bool) -> str:

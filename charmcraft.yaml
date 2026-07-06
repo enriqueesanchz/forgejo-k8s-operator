@@ -395,6 +395,12 @@ config:
       description: |
         Juju secret holding the bearer token for the Forgejo /metrics endpoint.
       type: secret
+    forgejo__proxy__proxy_enabled:
+      description: |
+        Enable the proxy if true; all requests to external sources via HTTP
+        will be affected. If false, no proxy will be used, even with
+        environment http_proxy/https_proxy.
+      type: boolean
     http_proxy:
       description: |
         HTTP proxy URL to use for outbound connections from Forgejo (sets the HTTP_PROXY

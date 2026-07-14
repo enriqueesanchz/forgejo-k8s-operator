@@ -18,7 +18,7 @@ Charmed k8s operator for forgejo.
 * Postgresql (or pgbouncer) for the database backend
 * Traefik for ingress
 
-Example deloyment:
+Example deployment:
 
 ```sh
 juju deploy forgejo-k8s

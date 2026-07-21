@@ -1,0 +1,39 @@
+name: Launchpad Sync
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  upstream-sha:
+    runs-on: ubuntu-latest
+    permissions: {}
+    outputs:
+      sha: ${{ steps.sha.outputs.sha }}
+    steps:
+      - name: Resolve latest upstream forgejo branch SHA
+        id: sha
+        run: |
+          set -euo pipefail
+          SHA=$(git ls-remote https://git.launchpad.net/~launchpad/forgejo/+git/forgejo forgejo | awk '{print $1}')
+          if [ -z "$SHA" ]; then
+            echo "Could not resolve forgejo branch SHA" >&2
+            exit 1
+          fi
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+  sync:
+    needs: upstream-sha
+    permissions:
+      contents: write
+      actions: write
+    uses: canonical/launchpad-actions/.github/workflows/sync.yaml@38c9a9f21e882d4be8b56ee7e3b3f26cb94dfba8
+    with:
+      source_url: https://git.launchpad.net/~launchpad/forgejo/+git/forgejo-k8s-operator
+      trigger_workflow: pipeline.yaml
+      trigger_ref: main
+      trigger_inputs_json: |
+        {"upstream_url": "https://git.launchpad.net/~launchpad/forgejo/+git/forgejo", "upstream_sha": "${{ needs.upstream-sha.outputs.sha }}"}

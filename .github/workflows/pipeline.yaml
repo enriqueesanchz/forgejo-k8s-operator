@@ -51,11 +51,12 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: canonical/launchpad-actions/.github/workflows/oci-image.yaml@d37e57af16120fba0055931e77518a5f9edf7513
+    uses: canonical/launchpad-actions/.github/workflows/oci-image.yaml@799f7ca218f01a8375713b1afb99935f9f9e272a
     with:
       repo_url: ${{ inputs.upstream_url }}
       repo_branch: ${{ inputs.upstream_branch }}
       commit_sha: ${{ inputs.upstream_sha }}
+      full_checkout: true
 
   charm:
     uses: canonical/launchpad-actions/.github/workflows/build-charm.yaml@d37e57af16120fba0055931e77518a5f9edf7513

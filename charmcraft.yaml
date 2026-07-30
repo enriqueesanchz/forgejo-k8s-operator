@@ -105,6 +105,7 @@ parts:
   charm:
     plugin: charm
     source: .
+    charm-strict-dependencies: true
     build-packages:
       - libssl-dev
       - pkg-config

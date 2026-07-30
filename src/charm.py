@@ -387,17 +387,24 @@ class ForgejoK8SOperatorCharm(ops.CharmBase):
         """Fetch postgres relation data.
 
         This function retrieves relation data from a postgres database using
-        the `fetch_relation_data` method of the `database` object. The retrieved data is
-        then logged for debugging purposes, and any non-empty data is processed to extract
-        endpoint information, username, and password. This processed data is then returned as
+        the `fetch_relation_data` method of the `database` object. Any non-empty
+        and complete data is processed to extract endpoint information, username,
+        and password. This processed data is then returned as
         a dictionary of FORGEJO__DATABASE__* env vars for environment-to-ini.
         If no data is retrieved, the unit is set to waiting status and
         the program exits with a zero status code.
         """
         relations = self.database.fetch_relation_data()
-        logger.debug("Got following database data: %s", relations)
+        logger.debug("Got database relation data for relations: %s", list(relations.keys()))
+        required_keys = ("endpoints", "username", "password")
         for data in relations.values():
             if not data:
+                continue
+            if any(key not in data for key in required_keys):
+                logger.warning(
+                    "Database relation data is incomplete (missing one of %s); skipping",
+                    required_keys,
+                )
                 continue
             logger.info("New database endpoint is %s", data["endpoints"])
             db_name = self.database_name

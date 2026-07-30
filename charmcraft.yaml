@@ -9,6 +9,17 @@ base: ubuntu@24.04
 platforms:
   amd64:
 
+links:
+  documentation: https://github.com/canonical/forgejo-k8s-operator/blob/main/README.md
+  website:
+    - https://forgejo.org
+  source:
+    - https://github.com/canonical/forgejo-k8s-operator
+  issues:
+    - https://github.com/canonical/forgejo-k8s-operator/issues
+  contact:
+    - https://matrix.to/#/#launchpad:ubuntu.com
+
 requires:
   database:
     interface: postgresql_client

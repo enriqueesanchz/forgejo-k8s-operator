@@ -468,9 +468,26 @@ class ForgejoK8SOperatorCharm(ops.CharmBase):
             )
             logger.info("Created empty base config file at %s", CUSTOM_FORGEJO_CONFIG_FILE)
 
-    def _on_storage_attached(self, _: ops.StorageAttachedEvent) -> None:
+    def _on_storage_attached(self, event: ops.StorageAttachedEvent) -> None:
+        if not self.container.can_connect():
+            logger.info(
+                "Pebble not ready yet at storage-attached time; deferring chown of %s",
+                FORGEJO_DATA_DIR,
+            )
+            event.defer()
+            return
+
         owner = f"{FORGEJO_SYSTEM_USER}:{FORGEJO_SYSTEM_GROUP}"
-        self.container.exec(["chown", owner, FORGEJO_DATA_DIR])
+        try:
+            process = self.container.exec(["chown", owner, FORGEJO_DATA_DIR])
+            process.wait()
+        except ops.pebble.ConnectionError as e:
+            logger.warning(
+                "Could not connect to Pebble to chown %s; deferring: %s", FORGEJO_DATA_DIR, e
+            )
+            event.defer()
+        except ops.pebble.ExecError as e:
+            logger.error("Failed to chown %s: %s", FORGEJO_DATA_DIR, e)
 
     # action wrappers
 

@@ -450,6 +450,7 @@ actions:
       scope:
         type: string
         description: owner/repo; leave empty for a global runner
+    additionalProperties: false
 
   create-admin-user:
     description: Create an admin user in Forgejo with random password.
@@ -463,6 +464,7 @@ actions:
     required:
     - username
     - email
+    additionalProperties: false
 
   generate-user-token:
     description: Generate an API access token for the specified Forgejo user.
@@ -480,6 +482,7 @@ actions:
           Examples "all", "public-only,read:issue", "write:repository,write:user" (default is "all")
     required:
     - username
+    additionalProperties: false
 
   reset-user-password:
     description: Reset the password for a Forgejo user to a new random password.
@@ -493,3 +496,4 @@ actions:
     required:
     - username
     - password
+    additionalProperties: false

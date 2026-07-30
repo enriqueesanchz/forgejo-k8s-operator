@@ -3,9 +3,14 @@
 import os
 import pathlib
 
+import jubilant
 import pytest
+import yaml
 
 DEFAULT_FORGEJO_IMAGE = "codeberg.org/forgejo/forgejo:15"
+
+METADATA = yaml.safe_load(pathlib.Path("./charmcraft.yaml").read_text())
+APP_NAME = METADATA["name"]
 
 
 def pytest_addoption(parser):
@@ -43,3 +48,26 @@ def charm():
     path = pathlib.Path(charm_path).resolve()
     assert path.is_file(), f"{path} is not a file"
     return path
+
+
+@pytest.fixture(scope="module")
+def deployed_app(charm: pathlib.Path, juju: jubilant.Juju, forgejo_image):
+    """Deploy forgejo-k8s with its required database backend; yield the app name.
+
+    Shared by the tests that only need a plain forgejo-k8s + postgresql-k8s
+    deployment.
+    """
+    juju.deploy(
+        charm,
+        APP_NAME,
+        resources={"forgejo-image": forgejo_image},
+    )
+    juju.deploy("postgresql-k8s", channel="14/stable", trust=True)
+    juju.integrate(f"{APP_NAME}:database", "postgresql-k8s:database")
+
+    juju.wait(
+        lambda status: jubilant.all_active(status, APP_NAME, "postgresql-k8s"),
+        timeout=1000,
+    )
+
+    yield APP_NAME

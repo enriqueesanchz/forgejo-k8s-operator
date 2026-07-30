@@ -409,27 +409,9 @@ config:
     forgejo__proxy__proxy_enabled:
       description: |
         Enable the proxy if true; all requests to external sources via HTTP
-        will be affected. If false, no proxy will be used, even with
-        environment http_proxy/https_proxy.
+        will be affected. If false, no proxy will be used, even if the
+        model's Juju proxy config (juju-http-proxy/juju-https-proxy) is set.
       type: boolean
-    http_proxy:
-      description: |
-        HTTP proxy URL to use for outbound connections from Forgejo (sets the HTTP_PROXY
-        env var).
-      default: ""
-      type: string
-    https_proxy:
-      description: |
-        HTTPS proxy URL to use for outbound connections from Forgejo (sets the HTTPS_PROXY
-        env var).
-      default: ""
-      type: string
-    no_proxy:
-      description: |
-        Comma-separated list of hosts or CIDR ranges that should bypass the proxy (sets the
-        NO_PROXY env var).
-      default: ""
-      type: string
 
 assumes:
   - juju >= 3.5

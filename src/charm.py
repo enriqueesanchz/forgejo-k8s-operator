@@ -3,6 +3,7 @@
 """Forgejo K8s Charm."""
 
 import logging
+import os
 import re
 from typing import Optional
 
@@ -240,6 +241,19 @@ class ForgejoK8SOperatorCharm(ops.CharmBase):
         }
         return ops.pebble.Layer(pebble_layer)
 
+    def _get_proxy_env(self) -> dict:
+        """Forward Juju's model-level proxy config into the workload environment."""
+        mapping = {
+            "JUJU_CHARM_HTTP_PROXY": "HTTP_PROXY",
+            "JUJU_CHARM_HTTPS_PROXY": "HTTPS_PROXY",
+            "JUJU_CHARM_NO_PROXY": "NO_PROXY",
+        }
+        return {
+            workload_var: value
+            for source_var, workload_var in mapping.items()
+            if (value := os.environ.get(source_var))
+        }
+
     def _build_additional_env(
         self,
         domain: str,
@@ -257,6 +271,7 @@ class ForgejoK8SOperatorCharm(ops.CharmBase):
             "FORGEJO____RUN_USER": "git",
             # Repository root
             "FORGEJO__REPOSITORY__ROOT": "/data/gitea/data/forgejo-repositories",
+            **self._get_proxy_env(),
             **self._fetch_postgres_relation_data(),
             **self._fetch_s3_relation_data(),
         }

@@ -3,7 +3,14 @@ name: forgejo-k8s
 title: Forgejo K8s Operator
 summary: Charmed Kubernetes operator for Forgejo.
 description: |
-  Deploy and configure the software forge, Forgejo.
+  Forgejo is a self-hosted, community-managed software forge: Git repository
+  hosting, code review, issues and pull requests, CI/CD via Forgejo Actions,
+  a package registry, and a lightweight project/wiki layer, all-in-one
+  application.
+
+  See the README for configuration and usage details, and the upstream
+  Forgejo documentation (https://forgejo.org/docs/latest/) for
+  workload-specific behaviour.
 
 base: ubuntu@24.04
 platforms:

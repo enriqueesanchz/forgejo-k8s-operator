@@ -3,12 +3,29 @@ name: forgejo-k8s
 title: Forgejo K8s Operator
 summary: Charmed Kubernetes operator for Forgejo.
 description: |
-  Deploy and configure the software forge, Forgejo.
+  Forgejo is a self-hosted, community-managed software forge: Git repository
+  hosting, code review, issues and pull requests, CI/CD via Forgejo Actions,
+  a package registry, and a lightweight project/wiki layer, all-in-one
+  application.
+
+  See the README for configuration and usage details, and the upstream
+  Forgejo documentation (https://forgejo.org/docs/latest/) for
+  workload-specific behaviour.
 
 base: ubuntu@24.04
 platforms:
   amd64:
-  arm64:
+
+links:
+  documentation: https://github.com/canonical/forgejo-k8s-operator/blob/main/README.md
+  website:
+    - https://forgejo.org
+  source:
+    - https://github.com/canonical/forgejo-k8s-operator
+  issues:
+    - https://github.com/canonical/forgejo-k8s-operator/issues
+  contact:
+    - https://matrix.to/#/#launchpad:ubuntu.com
 
 requires:
   database:
@@ -95,6 +112,7 @@ parts:
   charm:
     plugin: charm
     source: .
+    charm-strict-dependencies: true
     build-packages:
       - libssl-dev
       - pkg-config
@@ -398,27 +416,9 @@ config:
     forgejo__proxy__proxy_enabled:
       description: |
         Enable the proxy if true; all requests to external sources via HTTP
-        will be affected. If false, no proxy will be used, even with
-        environment http_proxy/https_proxy.
+        will be affected. If false, no proxy will be used, even if the
+        model's Juju proxy config (juju-http-proxy/juju-https-proxy) is set.
       type: boolean
-    http_proxy:
-      description: |
-        HTTP proxy URL to use for outbound connections from Forgejo (sets the HTTP_PROXY
-        env var).
-      default: ""
-      type: string
-    https_proxy:
-      description: |
-        HTTPS proxy URL to use for outbound connections from Forgejo (sets the HTTPS_PROXY
-        env var).
-      default: ""
-      type: string
-    no_proxy:
-      description: |
-        Comma-separated list of hosts or CIDR ranges that should bypass the proxy (sets the
-        NO_PROXY env var).
-      default: ""
-      type: string
 
 assumes:
   - juju >= 3.5
@@ -439,6 +439,7 @@ actions:
       scope:
         type: string
         description: owner/repo; leave empty for a global runner
+    additionalProperties: false
 
   create-admin-user:
     description: Create an admin user in Forgejo with random password.
@@ -452,6 +453,7 @@ actions:
     required:
     - username
     - email
+    additionalProperties: false
 
   generate-user-token:
     description: Generate an API access token for the specified Forgejo user.
@@ -469,6 +471,7 @@ actions:
           Examples "all", "public-only,read:issue", "write:repository,write:user" (default is "all")
     required:
     - username
+    additionalProperties: false
 
   reset-user-password:
     description: Reset the password for a Forgejo user to a new random password.
@@ -482,3 +485,4 @@ actions:
     required:
     - username
     - password
+    additionalProperties: false

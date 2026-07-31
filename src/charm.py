@@ -3,6 +3,7 @@
 """Forgejo K8s Charm."""
 
 import logging
+import os
 import re
 from typing import Optional
 
@@ -240,6 +241,19 @@ class ForgejoK8SOperatorCharm(ops.CharmBase):
         }
         return ops.pebble.Layer(pebble_layer)
 
+    def _get_proxy_env(self) -> dict:
+        """Forward Juju's model-level proxy config into the workload environment."""
+        mapping = {
+            "JUJU_CHARM_HTTP_PROXY": "HTTP_PROXY",
+            "JUJU_CHARM_HTTPS_PROXY": "HTTPS_PROXY",
+            "JUJU_CHARM_NO_PROXY": "NO_PROXY",
+        }
+        return {
+            workload_var: value
+            for source_var, workload_var in mapping.items()
+            if (value := os.environ.get(source_var))
+        }
+
     def _build_additional_env(
         self,
         domain: str,
@@ -257,6 +271,7 @@ class ForgejoK8SOperatorCharm(ops.CharmBase):
             "FORGEJO____RUN_USER": "git",
             # Repository root
             "FORGEJO__REPOSITORY__ROOT": "/data/gitea/data/forgejo-repositories",
+            **self._get_proxy_env(),
             **self._fetch_postgres_relation_data(),
             **self._fetch_s3_relation_data(),
         }
@@ -387,17 +402,24 @@ class ForgejoK8SOperatorCharm(ops.CharmBase):
         """Fetch postgres relation data.
 
         This function retrieves relation data from a postgres database using
-        the `fetch_relation_data` method of the `database` object. The retrieved data is
-        then logged for debugging purposes, and any non-empty data is processed to extract
-        endpoint information, username, and password. This processed data is then returned as
+        the `fetch_relation_data` method of the `database` object. Any non-empty
+        and complete data is processed to extract endpoint information, username,
+        and password. This processed data is then returned as
         a dictionary of FORGEJO__DATABASE__* env vars for environment-to-ini.
         If no data is retrieved, the unit is set to waiting status and
         the program exits with a zero status code.
         """
         relations = self.database.fetch_relation_data()
-        logger.debug("Got following database data: %s", relations)
+        logger.debug("Got database relation data for relations: %s", list(relations.keys()))
+        required_keys = ("endpoints", "username", "password")
         for data in relations.values():
             if not data:
+                continue
+            if any(key not in data for key in required_keys):
+                logger.warning(
+                    "Database relation data is incomplete (missing one of %s); skipping",
+                    required_keys,
+                )
                 continue
             logger.info("New database endpoint is %s", data["endpoints"])
             db_name = self.database_name
@@ -461,9 +483,26 @@ class ForgejoK8SOperatorCharm(ops.CharmBase):
             )
             logger.info("Created empty base config file at %s", CUSTOM_FORGEJO_CONFIG_FILE)
 
-    def _on_storage_attached(self, _: ops.StorageAttachedEvent) -> None:
+    def _on_storage_attached(self, event: ops.StorageAttachedEvent) -> None:
+        if not self.container.can_connect():
+            logger.info(
+                "Pebble not ready yet at storage-attached time; deferring chown of %s",
+                FORGEJO_DATA_DIR,
+            )
+            event.defer()
+            return
+
         owner = f"{FORGEJO_SYSTEM_USER}:{FORGEJO_SYSTEM_GROUP}"
-        self.container.exec(["chown", owner, FORGEJO_DATA_DIR])
+        try:
+            process = self.container.exec(["chown", owner, FORGEJO_DATA_DIR])
+            process.wait()
+        except ops.pebble.ConnectionError as e:
+            logger.warning(
+                "Could not connect to Pebble to chown %s; deferring: %s", FORGEJO_DATA_DIR, e
+            )
+            event.defer()
+        except ops.pebble.ExecError as e:
+            logger.error("Failed to chown %s: %s", FORGEJO_DATA_DIR, e)
 
     # action wrappers
 

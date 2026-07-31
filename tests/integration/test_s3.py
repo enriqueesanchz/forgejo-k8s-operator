@@ -42,7 +42,12 @@ def test_s3_credentials_relation(deployed_app, juju: jubilant.Juju):
     assert jubilant.all_active(status, deployed_app)
 
     juju.remove_relation(f"{deployed_app}:s3-credentials", "s3-integrator:s3-credentials")
-    juju.remove_application("s3-integrator")
+    juju.remove_application("s3-integrator", destroy_storage=True, force=True)
 
-    status = juju.wait(lambda status: jubilant.all_active(status, deployed_app), timeout=300)
-    assert jubilant.all_active(status, deployed_app)
+    # Wait for s3-integrator to be fully removed before letting the model teardown
+    juju.wait(
+        lambda status: (
+            "s3-integrator" not in status.apps and jubilant.all_active(status, deployed_app)
+        ),
+        timeout=300,
+    )
